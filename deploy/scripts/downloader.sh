@@ -5,7 +5,7 @@
 USERNAME='yuy4'
 BASE_URL='https://cs7ns1.scss.tcd.ie'
 KEY="shortname=$USERNAME"
-DOWNLOAD_LOCATION="./captchas"
+DOWNLOAD_LOCATION="captchas"
 
 ### script
 

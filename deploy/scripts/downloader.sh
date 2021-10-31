@@ -2,12 +2,13 @@
 
 ### parameters
 
-USERNAME='yuy4'
+USERNAME=$(whoami)
 BASE_URL='https://cs7ns1.scss.tcd.ie'
 KEY="shortname=$USERNAME"
 DOWNLOAD_LOCATION="captchas"
 
 ### script
+rm -r DOWNLOAD_LOCATION
 
 FILELIST_PATH=$(curl -s "$BASE_URL?$KEY" | sed -n 's/.*\s\(.*\.csv\).*/\1/p')
 DIR_NAME=$(echo $FILELIST_PATH | sed -n 's/\(.*\)\/.*\.csv/\1/p')

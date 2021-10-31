@@ -4,9 +4,9 @@
 
 USER='yuy4'
 PI='rasp-037.berry.scss.tcd.ie'
-SRC='output/project2'
-DST="$USER@$PI:~"
-MODELS='models/v4' # version 4
+SRC='output/project2/*'
+DST='~/project2'
+MODELS='models/v4/*' # version 4
 
 # jumper settings
 USE_JUMPER=true
@@ -23,16 +23,18 @@ cp -r deploy/* $SRC
 
 echo "===== Copy the Model Files to $SRC ====="
 mkdir $SRC/models
-cp -r $MODELS/* $SRC/models
+cp -r $MODELS $SRC/models
 
 echo "===== Copy the symbol file to $SRC ====="
 cp symbols.txt $SRC
 
 # push files to remote 
 if [ $USE_JUMPER ]; then
-  scp -rp -J $USER@$JUMPER $SRC $DST
+  ssh -J $USER@$JUMPER $USER@$PI "rm -r $DST"
+  scp -rp -J $USER@$JUMPER $SRC $USER@$PI:$DST
 else
-  scp -rp $SRC $DST
+  ssh $USER@$PI "rm -r $DST"
+  scp -rp $SRC $USER@$PI:$DST
 fi
 
 if [ $? == 0 ]; then

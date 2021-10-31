@@ -15,7 +15,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 # Build a Keras model given some parameters
-
 def create_model(captcha_length, input_shape, model_depth=5, module_size=2):
     input_tensor = keras.Input(input_shape)
     x = input_tensor
@@ -36,11 +35,10 @@ def create_model(captcha_length, input_shape, model_depth=5, module_size=2):
 
     return model
 
+
 # A Sequence represents a dataset for training in Keras
 # In this case, we have a folder full of images
 # Elements of a Sequence are *batches* of images, of some size batch_size
-
-
 class ImageSequence(keras.utils.Sequence):
     def __init__(self, directory_name, batch_size, captcha_length, captcha_width, captcha_height):
         self.directory_name = directory_name
@@ -152,10 +150,6 @@ def main(args=None):
     if args.output_model_name is None:
         print("Please specify a name for the trained model")
         exit(1)
-
-    captcha_symbols = None
-    with open(args.symbols) as symbols_file:
-        captcha_symbols = symbols_file.readline()
 
     with tf.device('/device:GPU:0'):
         model = create_model(args.length, (args.height, args.width, 3))

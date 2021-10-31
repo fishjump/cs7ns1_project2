@@ -14,8 +14,22 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-# Build a Keras model given some parameters
+def preprocess(raw_data):
+    data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2GRAY)
+    threshold, data = cv2.threshold(data, 0, 255, cv2.THRESH_OTSU)
+    data = cv2.dilate(data, (1, 3), iterations=3)
 
+    data = cv2.medianBlur(data, 3)
+    data = cv2.filter2D(data, -1, kernel=numpy.array(
+        [[0, -1, 0],
+         [-1, 5, -1],
+         [0, -1, 0]]
+    ))
+
+    return numpy.array(data)[..., numpy.newaxis]
+
+
+# Build a Keras model given some parameters
 def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):
     input_tensor = keras.Input(input_shape)
     x = input_tensor
@@ -70,7 +84,7 @@ class ImageSequence(keras.utils.Sequence):
 
     def __getitem__(self, idx):
         X = numpy.zeros((self.batch_size, self.captcha_height,
-                        self.captcha_width, 3), dtype=numpy.float32)
+                        self.captcha_width, 1), dtype=numpy.float32)
         y = None
         if self.captcha_length == 1:
             y = numpy.zeros((self.batch_size, len(self.captcha_symbols)),
@@ -96,13 +110,13 @@ class ImageSequence(keras.utils.Sequence):
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is 8-bit RGB
             raw_data = cv2.imread(png_path)
-            rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
-            processed_data = numpy.array(rgb_data) / 255.0
+            processed_data = preprocess(raw_data) / 255.0
             X[i] = processed_data
 
             if self.captcha_length == 1:
-                    y[i, :] = 0
-                    y[i, self.captcha_symbols.find(captcha_info['captcha_str'])] = 1
+                y[i, :] = 0
+                y[i, self.captcha_symbols.find(
+                    captcha_info['captcha_str'])] = 1
             else:
                 for j, ch in enumerate(captcha_info['captcha_str']):
                     y[j][i, :] = 0
@@ -111,7 +125,7 @@ class ImageSequence(keras.utils.Sequence):
         return X, y
 
 
-def main():
+def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
     parser.add_argument('--height', help='Height of captcha image', type=int)
@@ -131,7 +145,10 @@ def main():
         '--epochs', help='How many training epochs to run', type=int)
     parser.add_argument(
         '--symbols', help='File with the symbols to use in captchas', type=str)
-    args = parser.parse_args()
+    if args == None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
 
     if args.width is None:
         print("Please specify the captcha image width")
@@ -173,9 +190,9 @@ def main():
     with open(args.symbols) as symbols_file:
         captcha_symbols = symbols_file.readline()
 
-    with tf.device('/device:CPU:0'):
+    with tf.device('/device:GPU:0'):
         model = create_model(args.length, len(
-            captcha_symbols), (args.height, args.width, 3))
+            captcha_symbols), (args.height, args.width, 1))
 
         if args.input_model is not None:
             model.load_weights(args.input_model)
